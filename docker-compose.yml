@@ -4,12 +4,14 @@ services:
   # Flask backend service
   backend:
     build:
-      context: ./app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: app/Dockerfile
     container_name: backend
     environment:
       - FLASK_APP=app
+      - FLASK_ENV=${FLASK_ENV}
       - FLASK_ENV=development
+      - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
       - '5000:5000'
