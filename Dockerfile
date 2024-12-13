@@ -1,24 +1,28 @@
 FROM python:3.9.18-alpine3.18
 
-RUN apk add build-base
+# Install system dependencies
+RUN apk add --no-cache build-base postgresql-dev gcc python3-dev musl-dev
 
-RUN apk add postgresql-dev gcc python3-dev musl-dev
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-ARG FLASK_APP
-ARG FLASK_ENV
-ARG DATABASE_URL
-ARG SCHEMA
-ARG SECRET_KEY
+WORKDIR /app
 
-WORKDIR /var/www
-
+# Install Python dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir psycopg2 gunicorn
 
-RUN pip install -r requirements.txt
-RUN pip install psycopg2
-
+# Copy application code
 COPY . .
 
-RUN flask db upgrade
-RUN flask seed all
-CMD gunicorn app:app
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+
+# Expose port
+EXPOSE 5000
+
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
