@@ -49,15 +49,21 @@ jobs:
           echo "known_hosts content:"
           cat ~/.ssh/known_hosts
 
-      - name: Test SSH connection
+      - name: Debug SSH connection
         env:
           PI_USER: ${{ secrets.PI_USER }}
           PI_HOST: ${{ secrets.PI_HOST }}
         run: |
-          echo "Testing SSH connection..."
-          ssh -o StrictHostKeyChecking=no -o BatchMode=yes -T $PI_USER@$PI_HOST echo "SSH connection successful" || echo "SSH connection failed"
+          echo "Debug: Testing SSH connection..."
+          echo "User: $PI_USER"
+          echo "Host: $PI_HOST"
+          echo "SSH key content (first line):"
+          head -n 1 ~/.ssh/id_ed25519
+          echo "Testing SSH with verbose output..."
+          ssh -v -o StrictHostKeyChecking=no $PI_USER@$PI_HOST "echo 'Connection successful'"
 
       - name: Deploy to Raspberry Pi
+        if: success()
         env:
           PI_USER: ${{ secrets.PI_USER }}
           PI_HOST: ${{ secrets.PI_HOST }}
