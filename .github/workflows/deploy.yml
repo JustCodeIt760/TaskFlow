@@ -1,0 +1,34 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: raspberry-pi
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add Raspberry Pi to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Raspberry Pi
+        env:
+          PI_USER: ${{ secrets.PI_USER }}
+          PI_HOST: ${{ secrets.PI_HOST }}
+        run: |
+          ssh $PI_USER@$PI_HOST "mkdir -p ~/Mod7"
+          scp -r ./* $PI_USER@$PI_HOST:~/Mod7/
+          ssh $PI_USER@$PI_HOST "cd ~/Mod7 && chmod +x deploy.sh && ./deploy.sh"

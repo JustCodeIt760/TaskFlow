@@ -4,15 +4,16 @@ services:
   # Flask backend service
   backend:
     build:
-      context: ./app # Change this to ./app
-      dockerfile: Dockerfile # Just Dockerfile since context is app directory
+      context: ./app
+      dockerfile: Dockerfile
     container_name: backend
+    restart: unless-stopped
     environment:
-      - FLASK_APP=__init__.py # Change this to match what worked
-      - FLASK_DEBUG=1 # Use this instead of FLASK_ENV
+      - FLASK_APP=__init__.py
+      - FLASK_DEBUG=1
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - SCHEMA=${SCHEMA} # Add this if you're using schema
+      - SCHEMA=${SCHEMA}
     ports:
       - '5000:5000'
     volumes:
@@ -26,6 +27,7 @@ services:
     build:
       context: ./react-vite
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - '5173:5173'
     volumes:
@@ -37,6 +39,7 @@ services:
   # PostgreSQL database service
   db:
     image: postgres:14-alpine
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

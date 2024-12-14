@@ -1,6 +1,6 @@
 FROM python:3.9.18-alpine3.18
 
-RUN apk add build-base postgresql-dev gcc python3-dev musl-dev netcat-openbsd
+RUN apk add build-base postgresql-dev gcc python3-dev musl-dev netcat-openbsd postgresql-client
 
 WORKDIR /app
 
