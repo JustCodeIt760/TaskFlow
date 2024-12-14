@@ -15,21 +15,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Create SSH directory
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
       - name: Add Raspberry Pi to known hosts
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.PI_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.PI_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Raspberry Pi
         env:
           PI_USER: ${{ secrets.PI_USER }}
           PI_HOST: ${{ secrets.PI_HOST }}
         run: |
-          ssh $PI_USER@$PI_HOST "mkdir -p ~/Mod7"
-          scp -r ./* $PI_USER@$PI_HOST:~/Mod7/
-          ssh $PI_USER@$PI_HOST "cd ~/Mod7 && chmod +x deploy.sh && ./deploy.sh"
+          ssh -o StrictHostKeyChecking=no $PI_USER@$PI_HOST "mkdir -p ~/Mod7"
+          scp -o StrictHostKeyChecking=no -r ./* $PI_USER@$PI_HOST:~/Mod7/
+          ssh -o StrictHostKeyChecking=no $PI_USER@$PI_HOST "cd ~/Mod7 && chmod +x deploy.sh && ./deploy.sh"
