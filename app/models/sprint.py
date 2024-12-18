@@ -14,7 +14,7 @@ class Sprint(db.Model):
     _end_date = db.Column(db.DateTime)
 
     project = db.relationship("Project", back_populates="sprints")
-    features = db.relationship("Feature", back_populates="sprints")
+    features = db.relationship("Feature", back_populates="sprint")
 
     @property
     def start_date(self):
