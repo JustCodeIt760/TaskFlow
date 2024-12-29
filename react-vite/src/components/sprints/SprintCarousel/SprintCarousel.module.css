@@ -1,0 +1,102 @@
+.sprintCarousel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.carouselHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.carouselHeader button {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background: none;
+  cursor: pointer;
+}
+
+.carouselHeader h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sprintContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.sprintInfo {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.features {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.featuresHeader {
+  text-align: center;
+  font-size: 16px;
+  margin: 0;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.feature {
+  padding: 10px;
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.feature h3 {
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.feature p {
+  margin: 0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.featureStatus {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #eee;
+}
+
+.noSprints, .noFeatures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: #666;
+  font-size: 14px;
+}
+
+.noSprints h2 {
+  margin: 0;
+  font-size: 18px;
+}

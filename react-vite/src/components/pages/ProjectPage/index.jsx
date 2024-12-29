@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { thunkSetProject } from '../../../redux/project';
 import FeatureList from '../../features/FeatureList';
+import SprintCarousel from '../../sprints/SprintCarousel';
 import styles from './ProjectPage.module.css';
 
 const ProjectPage = () => {
@@ -27,13 +28,14 @@ const ProjectPage = () => {
 
         <main className={styles.mainContent}>
           <div className={styles.featuresContainer}>
+            <h2 className={styles.parkingLotHeader}>Parking Lot</h2>
             <FeatureList projectId={projectId} />
           </div>
         </main>
       </div>
 
       <div className={styles.sprintSection}>
-        {/* Sprint section will be implemented later */}
+        <SprintCarousel projectId={projectId} />
       </div>
     </div>
   );
