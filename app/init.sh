@@ -13,6 +13,15 @@ while ! nc -z db 5432; do
 done
 echo "PostgreSQL started successfully!"
 
+#!------run this sequence for fresh start if docker gives errors-->
+#docker-compose down -v
+#below items NOT commented out
+#docker compose up --build
+#docker compose down
+#comment out the below 3 chunks
+#docker compose up -d
+#!---------------------------------------------------------------->
+
 # Clean start - remove old migrations
 echo "Cleaning old migrations..."
 rm -rf migrations/

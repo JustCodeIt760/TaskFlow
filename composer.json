@@ -1,0 +1,20 @@
+{
+  "name": "jameshightower/mod7",
+  "type": "project",
+  "require": {
+    "monolog/monolog": "^3.8"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Jameshightower\\Mod7\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "JeyHightower",
+      "email": "Jamesehightower@gmail.com"
+    }
+  ],
+  "minimum-stability": "stable"
+}
