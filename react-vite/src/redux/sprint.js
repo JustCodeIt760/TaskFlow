@@ -100,18 +100,46 @@ export const thunkSetSprint =
     }
   };
 
-export const thunkAddSprint = (projectId, sprintData) => async (dispatch) => {
-  dispatch(setLoading(true));
+export const thunkAddSprint = (projectId, sprintData) => async dispatch => {
   try {
-    const response = await csrfFetch(`/projects/${projectId}/sprints`, {
+    const response = await csrfFetch(`/api/projects/${projectId}/sprints`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(sprintData),
     });
 
-    const newSprint = await response.json();
-    dispatch(addSprint(newSprint));
+    if (response.ok) {
+      const data = await response.json();
+      dispatch(addSprint(data));
+      return data;
+    } else {
+      const errors = await response.json();
+      return { errors };
+    }
+  } catch (error) {
+    return {
+      errors: { general: 'An error occurred while creating the sprint' },
+    };
+  }
+};
+
+export const thunkUpdateSprint = (projectId, sprintData) => async dispatch => {
+  dispatch(setLoading(true));
+  try {
+    const response = await csrfFetch(
+      `/projects/${projectId}/sprints/${sprintData.id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(sprintData),
+      }
+    );
+
+    const updatedSprint = await response.json();
+    dispatch(updateSprint(updatedSprint));
     dispatch(setErrors(null));
-    return newSprint;
+    return updatedSprint;
   } catch (err) {
     dispatch(setErrors(err.errors || baseError));
     return null;
@@ -120,34 +148,10 @@ export const thunkAddSprint = (projectId, sprintData) => async (dispatch) => {
   }
 };
 
-export const thunkUpdateSprint =
-  (projectId, sprintData) => async (dispatch) => {
-    dispatch(setLoading(true));
-    try {
-      const response = await csrfFetch(
-        `/projects/${projectId}/sprints/${sprintData.id}`,
-        {
-          method: 'PUT',
-          body: JSON.stringify(sprintData),
-        }
-      );
-
-      const updatedSprint = await response.json();
-      dispatch(updateSprint(updatedSprint));
-      dispatch(setErrors(null));
-      return updatedSprint;
-    } catch (err) {
-      dispatch(setErrors(err.errors || baseError));
-      return null;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
-
-export const thunkRemoveSprint = (sprintId) => async (dispatch) => {
+export const thunkRemoveSprint = (projectId, sprintId) => async dispatch => {
   dispatch(setLoading(true));
   try {
-    await csrfFetch(`/sprints/${sprintId}`, {
+    await csrfFetch(`/projects/${projectId}/sprints/${sprintId}`, {
       method: 'DELETE',
     });
     dispatch(removeSprint(sprintId));

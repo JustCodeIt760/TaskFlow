@@ -1,37 +1,39 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import {
   thunkAddSprint,
+  thunkLoadSprints,
   thunkRemoveSprint,
   thunkUpdateSprint,
 } from '../redux/sprint';
 import { useModal } from './Modal';
 
-const SprintFormModal = ({ type = 'create', sprint = null }) => {
+const SprintFormModal = ({
+  type = 'create',
+  sprint = null,
+  projectId = null,
+}) => {
   const { closeModal } = useModal();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const projects = useSelector(state => state.projects?.allProjects || {});
 
-  // Use State
+  // Use State - now using the sprint prop for initial values
   const [name, setName] = useState(sprint?.name || '');
   const [description, setDescription] = useState(sprint?.description || '');
-  const [projectId, setProjectId] = useState(sprint?.project_id || '');
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    projectId || sprint?.project_id || ''
+  );
   const [startDate, setStartDate] = useState(
     sprint?.start_date || new Date().toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(
     sprint?.end_date || new Date().toISOString().split('T')[0]
   );
-  const [createdAt, setCreatedAt] = useState(
-    sprint?.created_at || new Date().toISOString().split('T')[0]
-  );
-  const [updatedAt, setUpdatedAt] = useState(
-    sprint?.updated_at || new Date().toISOString().split('T')[0]
-  );
   const [errors, setErrors] = useState({});
+
+  // If projectId is provided, disable project selection
+  const isProjectLocked = Boolean(projectId);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -47,7 +49,7 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
       return;
     }
 
-    if (!projectId) {
+    if (!selectedProjectId) {
       setErrors(prev => ({
         ...prev,
         project_id: 'Project selection is required',
@@ -58,30 +60,29 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
     const sprintData = {
       name: name.trim(),
       description: description.trim(),
-      project_id: Number(projectId),
+      project_id: Number(selectedProjectId),
       start_date: startDate,
       end_date: endDate,
-    //   created_at: new Date(createdAt).toISOString().split('T')[0],
-    //   updated_at: new Date(updatedAt).toISOString().split('T')[0],
     };
 
     try {
       let result;
       if (type === 'create') {
-        result = await dispatch(thunkAddSprint(Number(projectId), sprintData));
+        result = await dispatch(
+          thunkAddSprint(Number(selectedProjectId), sprintData)
+        );
       } else if (type === 'update') {
         result = await dispatch(
-          thunkUpdateSprint({ ...sprintData, id: sprint.id })
+          thunkUpdateSprint(selectedProjectId, { ...sprintData, id: sprint.id })
         );
       }
 
       if (result?.errors) {
         setErrors(result.errors);
-      } else if (result) {
-        closeModal();
-        await dispatch(thunkLoadSprints(Number(projectId)))
       } else {
-        setErrors({ general: 'Failed to save sprint' });
+        // Refresh sprints list after successful operation
+        await dispatch(thunkLoadSprints(Number(selectedProjectId)));
+        closeModal(); // Close the modal after successful operation
       }
     } catch (error) {
       setErrors({ general: 'An error occurred' });
@@ -95,12 +96,14 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
 
     if (confirmDelete && sprint?.id) {
       try {
-        const result = await dispatch(thunkRemoveSprint(sprint.id));
+        const result = await dispatch(
+          thunkRemoveSprint(selectedProjectId, sprint.id)
+        );
         if (result?.errors) {
           setErrors({ delete: result.errors });
         } else if (result) {
           closeModal();
-          navigate('/sprints');
+          await dispatch(thunkLoadSprints(selectedProjectId));
         } else {
           setErrors({ delete: 'Failed to delete sprint' });
         }
@@ -119,9 +122,10 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
           <label htmlFor="project_id">Project</label>
           <select
             id="project_id"
-            value={projectId}
-            onChange={e => setProjectId(e.target.value)}
+            value={selectedProjectId}
+            onChange={e => setSelectedProjectId(e.target.value)}
             required
+            disabled={isProjectLocked}
           >
             <option value="">Select a project</option>
             {Object.values(projects).map(project => (

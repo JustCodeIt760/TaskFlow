@@ -2,25 +2,33 @@ import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useModal } from '../../../context/Modal';
 import SprintFormModal from '../../../context/SprintFormModal';
-import { thunkAddFeature, thunkLoadFeatures, thunkMoveFeature, updateFeature } from '../../../redux/feature';
+import {
+  thunkAddFeature,
+  thunkLoadFeatures,
+  thunkMoveFeature,
+  updateFeature,
+} from '../../../redux/feature';
 import { thunkSetProject } from '../../../redux/project';
-import { thunkLoadSprints } from '../../../redux/sprint';
+import { thunkLoadSprints, thunkRemoveSprint } from '../../../redux/sprint';
 import { loadTasks, selectAllTasks } from '../../../redux/task';
 import { csrfFetch } from '../../../utils/csrf';
 import styles from './ProjectPage.module.css';
 const ProjectPage = () => {
+  const { setModalContent } = useModal();
   const { projectId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const project = useSelector(state => state.projects.singleProject);
-  const features = useSelector(state => Object.values(state.features.allFeatures));
+  const features = useSelector(state =>
+    Object.values(state.features.allFeatures)
+  );
   const sprints = useSelector(state => Object.values(state.sprints.allSprints));
   const allTasks = useSelector(selectAllTasks);
   const isLoading = useSelector(state => state.projects.isLoading);
   const [currentSprintIndex, setCurrentSprintIndex] = useState(0);
   const [hoveredTask, setHoveredTask] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,19 +40,26 @@ const ProjectPage = () => {
       if (featuresResult) {
         for (const feature of featuresResult) {
           try {
-            const tasksResponse = await csrfFetch(`/projects/${projectId}/features/${feature.id}/tasks`);
+            const tasksResponse = await csrfFetch(
+              `/projects/${projectId}/features/${feature.id}/tasks`
+            );
             if (!tasksResponse.ok) {
               throw new Error(`Failed to load tasks for feature ${feature.id}`);
             }
             const tasksData = await tasksResponse.json();
             dispatch(loadTasks(tasksData));
             // Update feature with task IDs
-            dispatch(updateFeature({
-              ...feature,
-              tasks: tasksData.map(task => task.id)
-            }));
+            dispatch(
+              updateFeature({
+                ...feature,
+                tasks: tasksData.map(task => task.id),
+              })
+            );
           } catch (err) {
-            console.error(`Error loading tasks for feature ${feature.id}:`, err);
+            console.error(
+              `Error loading tasks for feature ${feature.id}:`,
+              err
+            );
           }
         }
       }
@@ -57,7 +72,9 @@ const ProjectPage = () => {
 
   const parkingLotFeatures = features.filter(feature => !feature.sprint_id);
   const currentSprint = sprints[currentSprintIndex];
-  const sprintFeatures = features.filter(feature => feature.sprint_id === currentSprint?.id);
+  const sprintFeatures = features.filter(
+    feature => feature.sprint_id === currentSprint?.id
+  );
 
   const handlePreviousSprint = () => {
     if (currentSprintIndex > 0) {
@@ -71,7 +88,7 @@ const ProjectPage = () => {
     }
   };
 
-  const handleSprintClick = (sprintId) => {
+  const handleSprintClick = sprintId => {
     navigate(`/projects/${projectId}/sprints/${sprintId}`);
   };
 
@@ -79,16 +96,16 @@ const ProjectPage = () => {
     e.dataTransfer.setData('featureId', featureId);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = e => {
     e.preventDefault();
     e.currentTarget.classList.add(styles.dragOver);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = e => {
     e.currentTarget.classList.remove(styles.dragOver);
   };
 
-  const handleDropOnParkingLot = async (e) => {
+  const handleDropOnParkingLot = async e => {
     e.preventDefault();
     e.currentTarget.classList.remove(styles.dragOver);
     const featureId = e.dataTransfer.getData('featureId');
@@ -97,7 +114,7 @@ const ProjectPage = () => {
     await dispatch(thunkLoadFeatures(projectId));
   };
 
-  const handleDropOnSprint = async (e) => {
+  const handleDropOnSprint = async e => {
     e.preventDefault();
     e.currentTarget.classList.remove(styles.dragOver);
     const featureId = e.dataTransfer.getData('featureId');
@@ -111,12 +128,12 @@ const ProjectPage = () => {
       name: 'New Feature',
       description: 'This is a new feature',
       status: 'Not Started',
-      priority: 1
+      priority: 1,
     };
     await dispatch(thunkAddFeature(projectId, newFeature));
   };
 
-  const handleTaskHover = (task) => {
+  const handleTaskHover = task => {
     setHoveredTask(task);
   };
 
@@ -124,12 +141,34 @@ const ProjectPage = () => {
     setHoveredTask(null);
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
+  const openSprintModal = (type = 'create', sprint = null) => {
+    setModalContent(
+      <SprintFormModal type={type} sprint={sprint} projectId={projectId} />
+    );
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const handleAddSprint = () => {
+    openSprintModal('create');
+  };
+
+  const handleEditSprint = sprint => {
+    if (sprint) {
+      openSprintModal('update', sprint);
+    }
+  };
+
+  const handleDeleteSprint = async sprintId => {
+    if (window.confirm('Are you sure you want to delete this sprint?')) {
+      try {
+        await dispatch(thunkRemoveSprint(projectId, sprintId));
+        await dispatch(thunkLoadSprints(projectId));
+        setCurrentSprintIndex(prev =>
+          prev >= sprints.length - 1 ? Math.max(0, sprints.length - 2) : prev
+        );
+      } catch (error) {
+        console.error('Failed to delete sprint:', error);
+      }
+    }
   };
 
   return (
@@ -194,9 +233,28 @@ const ProjectPage = () => {
           >
             →
           </button>
-          <button className={styles.addSprintButton} onClick={openModal}>
-            Add Sprint
-          </button>
+          <div className={styles.sprintActions}>
+            <button
+              className={`${styles.sprintButton} ${styles.addButton}`}
+              onClick={handleAddSprint}
+            >
+              Add Sprint
+            </button>
+            <button
+              className={`${styles.sprintButton} ${styles.editButton}`}
+              onClick={() => handleEditSprint(currentSprint)}
+              disabled={!currentSprint}
+            >
+              Edit Sprint
+            </button>
+            <button
+              className={`${styles.sprintButton} ${styles.deleteButton}`}
+              onClick={() => handleDeleteSprint(currentSprint?.id)}
+              disabled={!currentSprint}
+            >
+              Delete Sprint
+            </button>
+          </div>
         </div>
         <div className={styles.sprintContent}>
           {sprintFeatures.map(feature => {
@@ -260,9 +318,6 @@ const ProjectPage = () => {
           })}
         </div>
       </section>
-      {isModalOpen && (
-        <SprintFormModal type="create" closeModal={closeModal} />
-      )}
     </div>
   );
 };
