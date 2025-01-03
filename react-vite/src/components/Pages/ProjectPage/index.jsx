@@ -2,13 +2,13 @@ import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import SprintFormModal from '../../../context/SprintFormModal';
 import { thunkAddFeature, thunkLoadFeatures, thunkMoveFeature, updateFeature } from '../../../redux/feature';
 import { thunkSetProject } from '../../../redux/project';
 import { thunkLoadSprints } from '../../../redux/sprint';
 import { loadTasks, selectAllTasks } from '../../../redux/task';
 import { csrfFetch } from '../../../utils/csrf';
 import styles from './ProjectPage.module.css';
-import SprintFormModal from '../../../context/SprintFormModal';
 const ProjectPage = () => {
   const { projectId } = useParams();
   const dispatch = useDispatch();
@@ -93,6 +93,8 @@ const ProjectPage = () => {
     e.currentTarget.classList.remove(styles.dragOver);
     const featureId = e.dataTransfer.getData('featureId');
     await dispatch(thunkMoveFeature(projectId, featureId, null));
+    //Refresh features after moving.
+    await dispatch(thunkLoadFeatures(projectId));
   };
 
   const handleDropOnSprint = async (e) => {
@@ -259,7 +261,7 @@ const ProjectPage = () => {
         </div>
       </section>
       {isModalOpen && (
-        <SprintFormModal type="create" closeModal={closeModal} /> 
+        <SprintFormModal type="create" closeModal={closeModal} />
       )}
     </div>
   );

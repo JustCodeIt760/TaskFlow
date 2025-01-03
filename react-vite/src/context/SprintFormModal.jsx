@@ -68,7 +68,7 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
     try {
       let result;
       if (type === 'create') {
-        result = await dispatch(thunkAddSprint(sprintData));
+        result = await dispatch(thunkAddSprint(Number(projectId), sprintData));
       } else if (type === 'update') {
         result = await dispatch(
           thunkUpdateSprint({ ...sprintData, id: sprint.id })
@@ -79,6 +79,7 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
         setErrors(result.errors);
       } else if (result) {
         closeModal();
+        await dispatch(thunkLoadSprints(Number(projectId)))
       } else {
         setErrors({ general: 'Failed to save sprint' });
       }

@@ -219,6 +219,10 @@ const sprintReducer = (state = initialState, action) => {
           ...state.allSprints,
           [action.payload.id]: action.payload,
         },
+        singleSprint:
+          state.singleSprint?.id === action.payload.id
+            ? action.payload
+            : state.singleSprint,
       };
     },
 
@@ -230,6 +234,8 @@ const sprintReducer = (state = initialState, action) => {
       return {
         ...state,
         allSprints: remainingSprints,
+        singleSprint:
+          state.singleSprint?.id === action.payload ? null : state.singleSprint,
       };
     },
 
