@@ -151,9 +151,15 @@ const ProjectPage = () => {
     openSprintModal('create');
   };
 
-  const handleEditSprint = sprint => {
+  const handleEditSprint = async sprint => {
     if (sprint) {
-      openSprintModal('update', sprint);
+      // Refresh sprint data before opening modal
+      await dispatch(thunkLoadSprints(projectId));
+      // Get the fresh sprint data from the updated store
+      const freshSprint = Object.values(sprints).find(s => s.id === sprint.id);
+      if (freshSprint) {
+        openSprintModal('update', freshSprint);
+      }
     }
   };
 

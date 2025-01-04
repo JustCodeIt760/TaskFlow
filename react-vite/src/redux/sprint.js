@@ -132,14 +132,25 @@ export const thunkUpdateSprint = (projectId, sprintData) => async dispatch => {
       `/projects/${projectId}/sprints/${sprintData.id}`,
       {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(sprintData),
       }
     );
 
-    const updatedSprint = await response.json();
-    dispatch(updateSprint(updatedSprint));
-    dispatch(setErrors(null));
-    return updatedSprint;
+    if (response.ok) {
+      const updatedSprint = await response.json();
+      dispatch(updateSprint(updatedSprint));
+      // Reload all sprints to ensure consistency
+      await dispatch(thunkLoadSprints(projectId));
+      dispatch(setErrors(null));
+      return updatedSprint;
+    } else {
+      const errors = await response.json();
+      dispatch(setErrors(errors));
+      return { errors };
+    }
   } catch (err) {
     dispatch(setErrors(err.errors || baseError));
     return null;
@@ -217,15 +228,16 @@ const sprintReducer = (state = initialState, action) => {
     },
 
     [UPDATE_SPRINT]: (state, action) => {
+      const updatedSprint = action.payload;
       return {
         ...state,
         allSprints: {
           ...state.allSprints,
-          [action.payload.id]: action.payload,
+          [updatedSprint.id]: updatedSprint,
         },
         singleSprint:
-          state.singleSprint?.id === action.payload.id
-            ? action.payload
+          state.singleSprint?.id === updatedSprint.id
+            ? updatedSprint
             : state.singleSprint,
       };
     },

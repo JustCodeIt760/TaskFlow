@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   thunkAddSprint,
@@ -17,23 +17,42 @@ const SprintFormModal = ({
   const dispatch = useDispatch();
 
   const projects = useSelector(state => state.projects?.allProjects || {});
+  const currentSprints = useSelector(state => state.sprints?.allSprints || {});
 
-  // Use State - now using the sprint prop for initial values
-  const [name, setName] = useState(sprint?.name || '');
-  const [description, setDescription] = useState(sprint?.description || '');
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    projectId || sprint?.project_id || ''
-  );
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId || '');
   const [startDate, setStartDate] = useState(
-    sprint?.start_date || new Date().toISOString().split('T')[0]
+    new Date().toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(
-    sprint?.end_date || new Date().toISOString().split('T')[0]
+    new Date().toISOString().split('T')[0]
   );
   const [errors, setErrors] = useState({});
 
-  // If projectId is provided, disable project selection
-  const isProjectLocked = Boolean(projectId);
+  // Use useEffect to update form fields when sprint prop changes
+  useEffect(() => {
+    if (sprint && sprint.id) {
+      // Get the latest sprint data from the store
+      const currentSprint = currentSprints[sprint.id];
+      if (currentSprint) {
+        setName(currentSprint.name || '');
+        setDescription(currentSprint.description || '');
+        setSelectedProjectId(currentSprint.project_id || projectId || '');
+
+        // Format the dates properly
+        const formattedStartDate = currentSprint.start_date
+          ? new Date(currentSprint.start_date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+        const formattedEndDate = currentSprint.end_date
+          ? new Date(currentSprint.end_date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+
+        setStartDate(formattedStartDate);
+        setEndDate(formattedEndDate);
+      }
+    }
+  }, [sprint, projectId, currentSprints]);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -63,6 +82,7 @@ const SprintFormModal = ({
       project_id: Number(selectedProjectId),
       start_date: startDate,
       end_date: endDate,
+      id: sprint?.id,
     };
 
     try {
@@ -73,16 +93,16 @@ const SprintFormModal = ({
         );
       } else if (type === 'update') {
         result = await dispatch(
-          thunkUpdateSprint(selectedProjectId, { ...sprintData, id: sprint.id })
+          thunkUpdateSprint(Number(selectedProjectId), sprintData)
         );
       }
 
       if (result?.errors) {
         setErrors(result.errors);
       } else {
-        // Refresh sprints list after successful operation
+        // Refresh sprints data
         await dispatch(thunkLoadSprints(Number(selectedProjectId)));
-        closeModal(); // Close the modal after successful operation
+        closeModal();
       }
     } catch (error) {
       setErrors({ general: 'An error occurred' });
@@ -102,8 +122,8 @@ const SprintFormModal = ({
         if (result?.errors) {
           setErrors({ delete: result.errors });
         } else if (result) {
-          closeModal();
           await dispatch(thunkLoadSprints(selectedProjectId));
+          closeModal();
         } else {
           setErrors({ delete: 'Failed to delete sprint' });
         }
@@ -125,7 +145,7 @@ const SprintFormModal = ({
             value={selectedProjectId}
             onChange={e => setSelectedProjectId(e.target.value)}
             required
-            disabled={isProjectLocked}
+            disabled={Boolean(projectId)}
           >
             <option value="">Select a project</option>
             {Object.values(projects).map(project => (
@@ -189,34 +209,6 @@ const SprintFormModal = ({
           />
           {errors.end_date && <span className="error">{errors.end_date}</span>}
         </div>
-
-        {/* <div className="form-group">
-          <label htmlFor="created_at">Created At</label>
-          <input
-            id="created_at"
-            type="date"
-            value={createdAt}
-            onChange={e => setCreatedAt(e.target.value)}
-            required
-          />
-          {errors.created_at && (
-            <span className="error">{errors.created_at}</span>
-          )}
-        </div> */}
-
-        {/* <div className="form-group">
-          <label htmlFor="updated_at">Updated At</label>
-          <input
-            id="updated_at"
-            type="date"
-            value={updatedAt}
-            onChange={e => setUpdatedAt(e.target.value)}
-            required
-          />
-          {errors.updated_at && (
-            <span className="error">{errors.updated_at}</span>
-          )}
-        </div> */}
 
         <div className="form-actions">
           <button type="submit">
