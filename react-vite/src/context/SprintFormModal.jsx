@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import {
   thunkAddSprint,
   thunkRemoveSprint,
@@ -11,7 +10,6 @@ import { useModal } from './Modal';
 const SprintFormModal = ({ type = 'create', sprint = null }) => {
   const { closeModal } = useModal();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const projects = useSelector(state => state.projects?.allProjects || {});
 
@@ -61,17 +59,15 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
       project_id: Number(projectId),
       start_date: startDate,
       end_date: endDate,
-    //   created_at: new Date(createdAt).toISOString().split('T')[0],
-    //   updated_at: new Date(updatedAt).toISOString().split('T')[0],
     };
 
     try {
       let result;
       if (type === 'create') {
-        result = await dispatch(thunkAddSprint(sprintData));
+        result = await dispatch(thunkAddSprint(projectId, sprintData));
       } else if (type === 'update') {
         result = await dispatch(
-          thunkUpdateSprint({ ...sprintData, id: sprint.id })
+          thunkUpdateSprint(projectId, { ...sprintData, id: sprint.id })
         );
       }
 
@@ -79,6 +75,7 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
         setErrors(result.errors);
       } else if (result) {
         closeModal();
+        await dispatch(thunkLoadSprints(projectId));
       } else {
         setErrors({ general: 'Failed to save sprint' });
       }
@@ -94,12 +91,12 @@ const SprintFormModal = ({ type = 'create', sprint = null }) => {
 
     if (confirmDelete && sprint?.id) {
       try {
-        const result = await dispatch(thunkRemoveSprint(sprint.id));
+        const result = await dispatch(thunkRemoveSprint(sprint.id, projectId));
         if (result?.errors) {
           setErrors({ delete: result.errors });
         } else if (result) {
           closeModal();
-          navigate('/sprints');
+          await dispatch(thunkLoadSprints(projectId));
         } else {
           setErrors({ delete: 'Failed to delete sprint' });
         }
