@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ModalProvider, Modal } from '../context/Modal';
 import { thunkAuthenticate, selectUser } from '../redux/session';
@@ -12,12 +12,17 @@ export default function Layout() {
   const dispatch = useDispatch();
   const [isLoaded, setIsLoaded] = useState(false);
   const user = useSelector(selectUser);
+  const location = useLocation();
 
   useEffect(() => {
     dispatch(thunkAuthenticate())
       .then(() => dispatch(refreshAllData()))
       .then(() => setIsLoaded(true));
-  }, [dispatch]); // Remove user from dependencies
+  }, [dispatch]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <>
