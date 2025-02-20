@@ -25,7 +25,7 @@ services:
       - default
       - shared_portainer_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,11 +37,9 @@ services:
       context: ./react-vite
       dockerfile: Dockerfile
     container_name: taskflow-frontend
-    expose:
-      - '3000'
     environment:
       - NODE_ENV=production
-      - VITE_BASE_URL=http://localhost:5000  # Adjust this based on your domain
+      - VITE_BASE_URL=/api # Use relative path
     depends_on:
       - backend
     networks:
@@ -65,6 +63,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - default
+      - shared_portainer_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: taskflow-nginx
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
     networks:
       - default
       - shared_portainer_network

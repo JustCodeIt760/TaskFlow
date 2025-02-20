@@ -7,8 +7,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     eslintPlugin({
-      lintOnStart: false,  // Changed to false
-      failOnError: false,  // Changed to false
+      lintOnStart: false, // Changed to false
+      failOnError: false, // Changed to false
     }),
   ],
   server: {
